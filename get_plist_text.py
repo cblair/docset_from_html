@@ -21,4 +21,6 @@ def get_plist_text(cf_bundler_identifier, cf_bundle_name=None,
         <key>isDashDocset</key>
         <true/>
     </dict>
-    </plist>""".format()
+    </plist>""".format(cf_bundler_identifier=cf_bundler_identifier,
+        cf_bundle_name=cf_bundle_name,
+        docset_platform_family=docset_platform_family)
