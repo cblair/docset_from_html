@@ -22,7 +22,9 @@ class docset_from_html:
         # 3. Create the Info.plist File
         with open(os.path.join(docset_name + '.docset', 'Contents',
             'Info.plist')) as fp:
-            fp.write(get_plist_text)
+            fp.write(get_plist_text(cf_bundler_identifier=,
+                cf_bundle_name=docset_name,
+                docset_platform_family=None))
 
         # 4. Create the SQLite Index
         # 5. Populate the SQLite Index
