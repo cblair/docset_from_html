@@ -4,8 +4,8 @@ def get_plist_text(cf_bundler_identifier, cf_bundle_name=None,
     docset_platform_family=None):
     """TODO"""
 
-    cf_bundle_name = cf_bundle_name || cf_bundler_identifier.upper()
-    docset_platform_family = docset_platform_family || cf_bundle_name.upper()
+    cf_bundle_name = cf_bundle_name or cf_bundler_identifier.upper()
+    docset_platform_family = docset_platform_family or cf_bundle_name.upper()
 
     return """
     <?xml version="1.0" encoding="UTF-8"?>
