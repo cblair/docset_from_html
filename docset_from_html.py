@@ -18,9 +18,9 @@ class docset_from_html:
             'Resources'))
 
         # 2. Copy the HTML Documentation
-        shutil.copytree(self.html_src_dir,
-            os.path.join(self.docset_name + '.docset', 'Contents', 'Resources',
-                'Documentation'))
+        fq_dst_dir = os.path.join(self.docset_name + '.docset', 'Contents', 'Resources',
+                'Documentation')
+        shutil.copytree(self.html_src_dir, fq_dst_dir)
 
         # 3. Create the Info.plist File
         with open(os.path.join(self.docset_name + '.docset', 'Contents',
@@ -43,16 +43,25 @@ class docset_from_html:
                     docset_html_parser = DocsetHtmlParser()
                     docset_html_parser.feed(fp.read())
                     
+                    fq_dst_fname = os.path.join(fq_dst_dir, fname)
                     elements_with_path = docset_html_parser.elements
                     for element in elements_with_path:
-                        element.append(fq_fname)
+                        element.append(fq_dst_fname)
 
                     self.db_cursor.executemany(
                         'INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?,?,?)',
                         elements_with_path)
 
+                    print("TS")
+                    for row in self.db_cursor.execute("SELECT * FROM searchIndex;"):
+                        print row
+        self.conn.commit()
+
         # 6. Table of Contents Support (optional)
         # TODO
+
+        # Cleanup
+        self.conn.close()
 
 if __name__ == "__main__":
     print('foo')
