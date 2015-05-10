@@ -10,4 +10,8 @@ def get_entry_type(entry):
         * entry - TODO
 
     """
-    return 'Structure'
+    entry_type = None
+    if entry in ['h1', 'h2', 'h3', 'h4', 'h5']:
+        entry_type = 'Structure'
+
+    return entry_type

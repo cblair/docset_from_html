@@ -1,9 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 
 import os
 import shutil
 from get_plist_text import get_plist_text
 import sqlite3
+from DocsetHtmlParser import DocsetHtmlParser
 
 class docset_from_html:
 
@@ -35,8 +36,23 @@ class docset_from_html:
         self.db_cursor.execute('CREATE UNIQUE INDEX anchor ON searchIndex (name, type, path);')
 
         # 5. Populate the SQLite Index
-        # 5.1. Supported Entry Types
+        for dirpath, dnames, fnames in os.walk(self.html_src_dir):
+            for fname in fnames:
+                fq_fname = os.path.join(dirpath, fname)
+                with open(fq_fname) as fp:
+                    docset_html_parser = DocsetHtmlParser()
+                    docset_html_parser.feed(fp.read())
+                    
+                    elements_with_path = docset_html_parser.elements
+                    for element in elements_with_path:
+                        element.append(fq_fname)
+
+                    self.db_cursor.executemany(
+                        'INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?,?,?)',
+                        elements_with_path)
+
         # 6. Table of Contents Support (optional)
+        # TODO
 
 if __name__ == "__main__":
     print('foo')
