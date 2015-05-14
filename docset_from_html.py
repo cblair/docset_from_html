@@ -18,9 +18,9 @@ class docset_from_html:
             'Resources'))
 
         # 2. Copy the HTML Documentation
-        fq_dst_dir = os.path.join(self.docset_name + '.docset', 'Contents', 'Resources',
-                'Documentation')
-        shutil.copytree(self.html_src_dir, fq_dst_dir)
+        html_dst_dir = os.path.join(
+            self.docset_name + '.docset', 'Contents', 'Resources', 'Documentation')
+        shutil.copytree(self.html_src_dir, html_dst_dir)
 
         # 3. Create the Info.plist File
         with open(os.path.join(self.docset_name + '.docset', 'Contents',
@@ -36,25 +36,21 @@ class docset_from_html:
         self.db_cursor.execute('CREATE UNIQUE INDEX anchor ON searchIndex (name, type, path);')
 
         # 5. Populate the SQLite Index
-        for dirpath, dnames, fnames in os.walk(self.html_src_dir):
+        for dirpath, dnames, fnames in os.walk(html_dst_dir):
             for fname in fnames:
                 fq_fname = os.path.join(dirpath, fname)
                 with open(fq_fname) as fp:
                     docset_html_parser = DocsetHtmlParser()
                     docset_html_parser.feed(fp.read())
                     
-                    fq_dst_fname = os.path.join(fq_dst_dir, fname)
                     elements_with_path = docset_html_parser.elements
                     for element in elements_with_path:
-                        element.append(fq_dst_fname)
+                        internal_fname = os.path.join(dirpath, fname).replace(html_dst_dir + os.sep, '')
+                        element.append(internal_fname)
 
                     self.db_cursor.executemany(
                         'INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?,?,?)',
                         elements_with_path)
-
-                    print("TS")
-                    for row in self.db_cursor.execute("SELECT * FROM searchIndex;"):
-                        print row
         self.conn.commit()
 
         # 6. Table of Contents Support (optional)
@@ -64,6 +60,5 @@ class docset_from_html:
         self.conn.close()
 
 if __name__ == "__main__":
-    print('foo')
     dfh = docset_from_html('foo', 'fake_html')
     dfh.run()
