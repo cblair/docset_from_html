@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 import os
+import sys
 import shutil
 from get_plist_text import get_plist_text
 import sqlite3
@@ -60,5 +61,10 @@ class docset_from_html:
         self.conn.close()
 
 if __name__ == "__main__":
-    dfh = docset_from_html('foo', 'fake_html')
+    # Simple options handling.
+    if len(sys.argv) != 3:
+        print 'Usage: docset_from_html.py <docset name> <source html directory>'
+        sys.exit(1)
+
+    dfh = docset_from_html(sys.argv[1], sys.argv[2])
     dfh.run()
