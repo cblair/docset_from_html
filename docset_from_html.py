@@ -17,9 +17,9 @@ class docset_from_html:
         os.makedirs(os.path.join(self.docset_name + '.docset', 'Contents',
             'Resources'))
 
-        # 2. Copy the HTML Documentation
+        # 2. Copy the HTML Documents
         html_dst_dir = os.path.join(
-            self.docset_name + '.docset', 'Contents', 'Resources', 'Documentation')
+            self.docset_name + '.docset', 'Contents', 'Resources', 'Documents')
         shutil.copytree(self.html_src_dir, html_dst_dir)
 
         # 3. Create the Info.plist File
