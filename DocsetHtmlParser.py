@@ -25,3 +25,8 @@ class DocsetHtmlParser(HTMLParser):
                         entry_type
                     ]
                 )
+
+    def get_elements(self):
+        if hasattr(self, 'elements'):
+            return self.elements
+        return []

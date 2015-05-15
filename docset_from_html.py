@@ -44,7 +44,7 @@ class docset_from_html:
                     docset_html_parser = DocsetHtmlParser()
                     docset_html_parser.feed(fp.read())
                     
-                    elements_with_path = docset_html_parser.elements
+                    elements_with_path = docset_html_parser.get_elements()
                     for element in elements_with_path:
                         internal_fname = os.path.join(dirpath, fname).replace(html_dst_dir + os.sep, '')
                         element.append(internal_fname)
