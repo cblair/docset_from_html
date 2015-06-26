@@ -25,24 +25,14 @@ class docset_from_html:
         os.makedirs(os.path.join(self.docset_name + '.docset', 'Contents',
             'Resources'))
 
-    def run(self):
-        html_dst_dir = os.path.join(
-            self.docset_name + '.docset', 'Contents', 'Resources', 'Documents')
-        
-        # 1. Create the Docset Folder
-        self.__make_docset_folder()
-
-        # 2. Copy the HTML Documents
-        shutil.copytree(self.html_src_dir, html_dst_dir)
-
-        # 3. Create the Info.plist File
+    def __create_info_plist_file(self):
         with open(os.path.join(self.docset_name + '.docset', 'Contents',
             'Info.plist'), 'w') as fp:
             fp.write(get_plist_text(cf_bundler_identifier=self.docset_name,
                 cf_bundle_name=self.docset_name,
                 docset_platform_family=None))
 
-        # 4. Create the SQLite Index
+    def __create_sqlite_index(self):
         self.conn = sqlite3.connect(
             os.path.join(self.docset_name + 
                 '.docset','Contents','Resources','docSet.dsidx'))
@@ -52,7 +42,7 @@ class docset_from_html:
         self.db_cursor.execute('CREATE UNIQUE INDEX anchor ON searchIndex' +
             '(name, type, path);')
 
-        # 5. Populate the SQLite Index
+    def __population_sqlite_index(self, html_dst_dir):
         for dirpath, dnames, fnames in os.walk(html_dst_dir):
             for fname in fnames:
                 fq_fname = os.path.join(dirpath, fname)
@@ -69,7 +59,7 @@ class docset_from_html:
                             elements_with_path.append(
                                     [
                                         # name
-                                        selection_text,
+                                        selection.text,
                                         # type
                                         entry_type,
                                         #path
@@ -86,23 +76,26 @@ class docset_from_html:
                         'INSERT OR IGNORE INTO searchIndex' +
                             '(name, type, path) VALUES (?,?,?)',
                         elements_with_path)
-
-                    """
-                    docset_html_parser = DocsetHtmlParser()
-                    docset_html_parser.feed(filetext)
-                    
-                    elements_with_path = docset_html_parser.get_elements()
-                    for element in elements_with_path:
-                        internal_fname = os.path.join(dirpath, fname).replace(
-                            html_dst_dir + os.sep, '')
-                        element.append(internal_fname)
-
-                    self.db_cursor.executemany(
-                        'INSERT OR IGNORE INTO searchIndex' +
-                            '(name, type, path) VALUES (?,?,?)',
-                        elements_with_path)
-                    """
         self.conn.commit()
+
+    def run(self):
+        html_dst_dir = os.path.join(
+            self.docset_name + '.docset', 'Contents', 'Resources', 'Documents')
+
+        # 1. Create the Docset Folder
+        self.__make_docset_folder()
+
+        # 2. Copy the HTML Documents
+        shutil.copytree(self.html_src_dir, html_dst_dir)
+
+        # 3. Create the Info.plist File
+        self.__create_info_plist_file()
+
+        # 4. Create the SQLite Index
+        self.__create_sqlite_index()
+
+        # 5. Populate the SQLite Index
+        self.__population_sqlite_index(html_dst_dir)
 
         # 6. Table of Contents Support (optional)
         # TODO
