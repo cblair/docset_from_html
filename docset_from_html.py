@@ -6,22 +6,33 @@ import shutil
 from get_plist_text import get_plist_text
 import sqlite3
 #from DocsetHtmlParser import DocsetHtmlParser
+import json
 from pyquery import PyQuery as pq
 
 class docset_from_html:
 
-    def __init__(self, docset_name, html_src_dir):
+    def __init__(self, docset_name, html_src_dir, config_filename):
         self.docset_name = docset_name
         self.html_src_dir = html_src_dir
+        self.config_file = open(config_filename, 'r')
 
-    def run(self):
-        # 1. Create the Docset Folder
+        self.config_selections = json.loads(self.config_file.read())
+
+    def __del__(self):
+        self.config_file.close()
+
+    def __make_docset_folder(self):
         os.makedirs(os.path.join(self.docset_name + '.docset', 'Contents',
             'Resources'))
 
-        # 2. Copy the HTML Documents
+    def run(self):
         html_dst_dir = os.path.join(
             self.docset_name + '.docset', 'Contents', 'Resources', 'Documents')
+        
+        # 1. Create the Docset Folder
+        self.__make_docset_folder()
+
+        # 2. Copy the HTML Documents
         shutil.copytree(self.html_src_dir, html_dst_dir)
 
         # 3. Create the Info.plist File
@@ -49,9 +60,32 @@ class docset_from_html:
                     filetext = fp.read()
 
                     dom = pq(filetext)
-                    selections = dom("p")
-                    for selection in selections:
-                        print(selection.text)
+
+                    elements_with_path = []
+                    for selection_text, entry_type in self.config_selections.items():
+                        selections = dom(selection_text)
+                        for selection in selections:
+                            print(selection_text + ':' + selection.text)
+                            elements_with_path.append(
+                                    [
+                                        # name
+                                        selection_text,
+                                        # type
+                                        entry_type,
+                                        #path
+                                        # TODO: need to add # name reference so
+                                        # clicking on the index will go to the
+                                        # page section (if html name attr is
+                                        # set). User selection.attrib.
+                                        os.path.join(dirpath, fname).replace(
+                                            html_dst_dir + os.sep, '')
+                                    ]
+                                )
+
+                    self.db_cursor.executemany(
+                        'INSERT OR IGNORE INTO searchIndex' +
+                            '(name, type, path) VALUES (?,?,?)',
+                        elements_with_path)
 
                     """
                     docset_html_parser = DocsetHtmlParser()
@@ -78,10 +112,11 @@ class docset_from_html:
 
 if __name__ == "__main__":
     # Simple options handling.
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         print(
-            'Usage: docset_from_html.py <docset name> <source html directory>')
+            'Usage: docset_from_html.py <docset name> ' + 
+                '<source html directory> <selection config file>')
         sys.exit(1)
 
-    dfh = docset_from_html(sys.argv[1], sys.argv[2])
+    dfh = docset_from_html(sys.argv[1], sys.argv[2], sys.argv[3])
     dfh.run()
