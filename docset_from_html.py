@@ -43,39 +43,57 @@ class docset_from_html:
             '(name, type, path);')
 
     def __population_sqlite_index(self, html_dst_dir):
+        # For every file in the destination directory...
         for dirpath, dnames, fnames in os.walk(html_dst_dir):
             for fname in fnames:
+
+                # Open the file and process it
                 fq_fname = os.path.join(dirpath, fname)
                 with open(fq_fname) as fp:
                     filetext = fp.read()
 
+                    # Get a DOM object from the text.
                     dom = pq(filetext)
 
-                    elements_with_path = []
-                    for selection_text, entry_type in self.config_selections.items():
-                        selections = dom(selection_text)
-                        for selection in selections:
-                            print(selection_text + ':' + selection.text)
-                            elements_with_path.append(
+                    # Collect all the elements in the DOM we care about based
+                    # on the selection configuration, and craft our search index
+                    # data from it.
+                    search_index_data = []
+                    for selection_text, entry_type in \
+                        self.config_selections.items():
+
+                        # Get all the elements that match in the DOM.
+                        elements = dom(selection_text)
+                        for element in elements:
+                            # The optional reference to the page section, using
+                            # the HTML name attribute.
+                            section_reference = ""
+                            # TODO: check that its an <a> element too.
+                            # TODO: support HTML 5 id attribute
+                            if 'name' in element.attrib.keys():
+                                section_reference = "#" + element.attrib['name']
+
+                            search_index_data.append(
                                     [
                                         # name
-                                        selection.text,
+                                        element.text,
                                         # type
                                         entry_type,
                                         #path
                                         # TODO: need to add # name reference so
                                         # clicking on the index will go to the
                                         # page section (if html name attr is
-                                        # set). User selection.attrib.
+                                        # set). User element.attrib.
                                         os.path.join(dirpath, fname).replace(
-                                            html_dst_dir + os.sep, '')
+                                            html_dst_dir + os.sep, ''
+                                            ) + section_reference
                                     ]
                                 )
 
                     self.db_cursor.executemany(
                         'INSERT OR IGNORE INTO searchIndex' +
                             '(name, type, path) VALUES (?,?,?)',
-                        elements_with_path)
+                        search_index_data)
         self.conn.commit()
 
     def run(self):
