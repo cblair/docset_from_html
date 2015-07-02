@@ -63,5 +63,5 @@ and this `foo.html`:
 ~docset_from_html will create an index entry:
 
 text    | entry type    | path
-------------------------------
-os.walk   Structure       foo.html#section1
+------- | ------------- | -----------------
+os.walk | Structure     | foo.html#section1
