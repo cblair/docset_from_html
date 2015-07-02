@@ -59,11 +59,11 @@ class docset_from_html:
                     # on the selection configuration, and craft our search index
                     # data from it.
                     search_index_data = []
-                    for selection_text, entry_type in \
-                        self.config_selections.items():
+                    for key in self.config_selections.keys():
+                        config_selection = self.config_selections[key]
 
                         # Get all the elements that match in the DOM.
-                        elements = dom(selection_text)
+                        elements = dom(key)
                         for element in elements:
                             # The optional reference to the page section, using
                             # the HTML name attribute.
@@ -73,22 +73,30 @@ class docset_from_html:
                             if 'name' in element.attrib.keys():
                                 section_reference = "#" + element.attrib['name']
 
+                            # Set the search text to the element's text, or
+                            # what the config wants it set to.
+                            element_text = element.text
+                            if 'text_sub_element' in config_selection.keys():
+                                element_text = element.find(
+                                    config_selection['text_sub_element']).text
+                            print(element_text)
+
                             search_index_data.append(
-                                    [
-                                        # name
-                                        element.text,
-                                        # type
-                                        entry_type,
-                                        #path
-                                        # TODO: need to add # name reference so
-                                        # clicking on the index will go to the
-                                        # page section (if html name attr is
-                                        # set). User element.attrib.
-                                        os.path.join(dirpath, fname).replace(
-                                            html_dst_dir + os.sep, ''
-                                            ) + section_reference
-                                    ]
-                                )
+                                [
+                                    # name
+                                    element_text,
+                                    # type
+                                    config_selection['entry_type'],
+                                    #path
+                                    # TODO: need to add # name reference so
+                                    # clicking on the index will go to the
+                                    # page section (if html name attr is
+                                    # set). User element.attrib.
+                                    os.path.join(dirpath, fname).replace(
+                                        html_dst_dir + os.sep, ''
+                                        ) + section_reference
+                                ]
+                            )
 
                     self.db_cursor.executemany(
                         'INSERT OR IGNORE INTO searchIndex' +
@@ -122,7 +130,7 @@ class docset_from_html:
         self.conn.close()
 
 if __name__ == "__main__":
-    # Simple options handling.
+    # Simple cheesy options handling.
     if len(sys.argv) != 4:
         print(
             'Usage: docset_from_html.py <docset name> ' + 
