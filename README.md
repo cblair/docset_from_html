@@ -43,7 +43,7 @@ For example:
 
 The file is a JSON dictionary of dictionaries. The keys are the HTML element
 to select. The value dictonary defines what attributes to assign to the
-HTML selection. The element in the HTML document *must have an &lt;a&gt name
+HTML selection. The element in the HTML document *must have an &lt;a&gt; name
 attribute* for docset_from_html to reference the element, otherwise it will
 only reference the page (not optimal).
 
