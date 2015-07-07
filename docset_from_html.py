@@ -5,7 +5,8 @@ import sys
 import shutil
 from get_plist_text import get_plist_text
 import sqlite3
-#from DocsetHtmlParser import DocsetHtmlParser
+import re
+import lxml
 import json
 from pyquery import PyQuery as pq
 
@@ -42,18 +43,37 @@ class docset_from_html:
         self.db_cursor.execute('CREATE UNIQUE INDEX anchor ON searchIndex' +
             '(name, type, path);')
 
+    # TODO - refactor, split out into more separate methods
     def __population_sqlite_index(self, html_dst_dir):
+        fileregex = re.compile('^.*\.html')
         # For every file in the destination directory...
         for dirpath, dnames, fnames in os.walk(html_dst_dir):
             for fname in fnames:
 
+                # If the file is not an html file, go to the next one.
+                if not fileregex.match(fname):
+                    continue
+
                 # Open the file and process it
                 fq_fname = os.path.join(dirpath, fname)
                 with open(fq_fname) as fp:
-                    filetext = fp.read()
+                    try:
+                       filetext = fp.read()
+                    except:
+                       filetext = ""
 
                     # Get a DOM object from the text.
-                    dom = pq(filetext)
+                    try:
+                        dom = pq(filetext)
+                        print("Processing " + fq_fname)
+                    except ValueError as e:
+                        print("WARN: ignoring {fname}, error: {error}".format(
+                            fname=fq_fname, error=e))
+                        continue
+                    except lxml.etree.XMLSyntaxError as e:
+                        print("WARN: ignoring {fname}, error: {error}".format(
+                            fname=fq_fname, error=e))
+                        continue
 
                     # Collect all the elements in the DOM we care about based
                     # on the selection configuration, and craft our search index
@@ -77,9 +97,10 @@ class docset_from_html:
                             # what the config wants it set to.
                             element_text = element.text
                             if 'text_sub_element' in config_selection.keys():
-                                element_text = element.find(
-                                    config_selection['text_sub_element']).text
-                            print(element_text)
+                                sub_element = element.find(
+                                    config_selection['text_sub_element'])
+                                element_text = sub_element.text if \
+                                    sub_element != None else ""
 
                             search_index_data.append(
                                 [
